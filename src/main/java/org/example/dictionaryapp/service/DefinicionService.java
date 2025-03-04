@@ -1,8 +1,10 @@
 package org.example.dictionaryapp.service;
 
+import org.example.dictionaryapp.exception.RecordNotFoundException;
 import org.example.dictionaryapp.model.Definicion;
 import org.example.dictionaryapp.model.Palabra;
 import org.example.dictionaryapp.repository.DefinicionRepository;
+import org.example.dictionaryapp.repository.PalabraRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,34 +13,38 @@ import java.util.Optional;
 
 @Service
 public class DefinicionService {
-    @Autowired
-    private PalabraService palabraService;
 
     @Autowired
     private DefinicionRepository definicionRepository;
 
-    public List<Definicion> findAll() {
-        return definicionRepository.findAll();
+    @Autowired
+    private PalabraRepository palabraRepository;
+
+    public List<Definicion> getDefinicionesByPalabraId(Long palabraId) throws RecordNotFoundException {
+        Optional<Palabra> palabra = palabraRepository.findById(palabraId);
+        if (palabra.isPresent()) {
+            return palabra.get().getDefiniciones();
+        } else {
+            throw new RecordNotFoundException("No existe Palabra para el id: ", palabraId);
+        }
     }
 
-    public Optional<Definicion> findById(Long id) {
-        return definicionRepository.findById(id);
-    }
-
-    public Definicion save(Definicion definicion) {
-        return definicionRepository.save(definicion);
-    }
-
-    public void deleteById(Long id) {
-        definicionRepository.deleteById(id);
-    }
-    public Definicion addDefinicionToPalabra(Long palabraId, Definicion definicion) {
-        Optional<Palabra> palabra = palabraService.findById(palabraId);
+    public Definicion createDefinicion(Long palabraId, Definicion definicion) throws RecordNotFoundException {
+        Optional<Palabra> palabra = palabraRepository.findById(palabraId);
         if (palabra.isPresent()) {
             definicion.setPalabra(palabra.get());
             return definicionRepository.save(definicion);
         } else {
-            throw new RuntimeException("Palabra not found");
+            throw new RecordNotFoundException("No existe Palabra para el id: ", palabraId);
+        }
+    }
+
+    public void deleteDefinicion(Long id) throws RecordNotFoundException {
+        Optional<Definicion> definicionOptional = definicionRepository.findById(id);
+        if (definicionOptional.isPresent()) {
+            definicionRepository.delete(definicionOptional.get());
+        } else {
+            throw new RecordNotFoundException("No existe Definicion para el id: ", id);
         }
     }
 }

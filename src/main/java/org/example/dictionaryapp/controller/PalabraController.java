@@ -1,119 +1,102 @@
 package org.example.dictionaryapp.controller;
 
+import org.example.dictionaryapp.exception.RecordNotFoundException;
 import org.example.dictionaryapp.model.Definicion;
 import org.example.dictionaryapp.model.Palabra;
 import org.example.dictionaryapp.service.DefinicionService;
 import org.example.dictionaryapp.service.PalabraService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/palabras")
 public class PalabraController {
 
     @Autowired
-    private PalabraService palabraService;
-
-    @Autowired
     private DefinicionService definicionService;
 
-    // Obtener todas las palabras del diccionario
+    @Autowired
+    private PalabraService palabraService;
+
+    @CrossOrigin
     @GetMapping
-    public List<Palabra> getAllPalabras() {
-        return palabraService.findAll();
+    public ResponseEntity<List<Palabra>> getAllPalabras() {
+        List<Palabra> list = palabraService.getAllPalabras();
+        return new ResponseEntity<List<Palabra>>(list, new HttpHeaders(), HttpStatus.OK);
     }
 
-    // Obtener una palabra específica con sus definiciones
+    @CrossOrigin
     @GetMapping("/{id}")
-    public ResponseEntity<Palabra> getPalabraById(@PathVariable Long id) {
-        Optional<Palabra> palabra = palabraService.findById(id);
-        return palabra.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Palabra> getPalabraById(@PathVariable Long id) throws RecordNotFoundException {
+        Palabra palabra = palabraService.getPalabraById(id);
+        return new ResponseEntity<Palabra>(palabra, new HttpHeaders(), HttpStatus.OK);
     }
 
-    // Crear una nueva palabra sin definiciones
-    @PostMapping
-    public Palabra createPalabra(@RequestBody Palabra palabra) {
-        return palabraService.save(palabra);
+    @CrossOrigin
+    @PutMapping
+    public ResponseEntity<Palabra> createPalabra(@RequestBody Palabra palabra) {
+        Palabra createdPalabra = palabraService.createPalabra(palabra);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPalabra);
     }
 
-    // Crear una nueva palabra con sus definiciones
-    @PostMapping("/condefiniciones")
-    public ResponseEntity<Palabra> createPalabraWithDefiniciones(@RequestBody Palabra palabra) {
-        Palabra savedPalabra = palabraService.save(palabra);
-        for (Definicion definicion : palabra.getDefiniciones()) {
-            definicion.setPalabra(savedPalabra);
-            definicionService.save(definicion);
-        }
-        return ResponseEntity.ok(savedPalabra);
+    @CrossOrigin
+    @PutMapping("/{id}") // Use an ID to identify the Palabra to update
+    public ResponseEntity<Palabra> updatePalabra(@PathVariable Long id, @RequestBody Palabra palabra) throws RecordNotFoundException {
+        Palabra updatedPalabra = palabraService.updatePalabra(id, palabra);
+        return ResponseEntity.ok(updatedPalabra);
     }
 
-    // Actualizar una palabra existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Palabra> updatePalabra(@PathVariable Long id, @RequestBody Palabra palabraDetails) {
-        Optional<Palabra> palabra = palabraService.findById(id);
-        if (palabra.isPresent()) {
-            Palabra updatedPalabra = palabra.get();
-            updatedPalabra.setTermino(palabraDetails.getTermino());
-            updatedPalabra.setCategoriaGramatical(palabraDetails.getCategoriaGramatical());
-            palabraService.save(updatedPalabra);
-            return ResponseEntity.ok(updatedPalabra);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Eliminar una palabra y sus definiciones
+    @CrossOrigin
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePalabra(@PathVariable Long id) {
-        Optional<Palabra> palabra = palabraService.findById(id);
-        if (palabra.isPresent()) {
-            // Eliminar las definiciones asociadas
-            palabra.get().getDefiniciones().forEach(definicion -> definicionService.deleteById(definicion.getId()));
-            palabraService.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public HttpStatus deletePalabra(@PathVariable Long id) throws RecordNotFoundException {
+        palabraService.deletePalabra(id);
+        return HttpStatus.ACCEPTED;
     }
 
-    // Obtener todas las definiciones de una palabra
-    @GetMapping("/{id}/definiciones")
-    public ResponseEntity<List<Definicion>> getDefinicionesByPalabraId(@PathVariable Long id) {
-        Optional<Palabra> palabra = palabraService.findById(id);
-        if (palabra.isPresent()) {
-            return ResponseEntity.ok(palabra.get().getDefiniciones());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Agregar una nueva definición a una palabra
-    @PostMapping("/{id}/definiciones")
-    public ResponseEntity<Definicion> addDefinicionToPalabra(@PathVariable Long id, @RequestBody Definicion definicion) {
-        Optional<Palabra> palabra = palabraService.findById(id);
-        if (palabra.isPresent()) {
-            definicion.setPalabra(palabra.get());
-            Definicion savedDefinicion = definicionService.save(definicion);
-            return ResponseEntity.ok(savedDefinicion);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Obtener una lista de palabras por inicial
-    @GetMapping("/inicial/{letra}")
-    public List<Palabra> getPalabrasByInicial(@PathVariable String letra) {
-        return palabraService.findByInicial(letra);
-    }
-
-    // Obtener una lista de palabras por categoría gramatical
+    @CrossOrigin
     @GetMapping("/categoria/{categoria}")
-    public List<Palabra> getPalabrasByCategoria(@PathVariable String categoria) {
-        return palabraService.findByCategoria(categoria);
+    public ResponseEntity<List<Palabra>> getPalabrasByCategoria(@PathVariable String categoria) {
+        List<Palabra> list = palabraService.getPalabrasByCategoria(categoria);
+        return new ResponseEntity<List<Palabra>>(list, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @GetMapping("/inicial/{letra}")
+    public ResponseEntity<List<Palabra>> getPalabrasByInicial(@PathVariable char letra) {
+        List<Palabra> list = palabraService.getPalabrasByInicial(letra);
+        return new ResponseEntity<List<Palabra>>(list, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @GetMapping("/existe/{termino}")
+    public ResponseEntity<Boolean> existePalabra(@PathVariable String termino) {
+        boolean existe = palabraService.existePalabra(termino);
+        return new ResponseEntity<Boolean>(existe, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @PutMapping("/condefiniciones")
+    public ResponseEntity<Palabra> createPalabraConDefiniciones(@RequestBody Palabra palabra) {
+        Palabra createdPalabra = palabraService.createPalabraConDefiniciones(palabra);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPalabra);
+    }
+
+    @CrossOrigin
+    @GetMapping("/{id}/definiciones")
+    public ResponseEntity<List<Definicion>> getDefinicionesByPalabraId(@PathVariable Long id) throws RecordNotFoundException {
+        List<Definicion> list = definicionService.getDefinicionesByPalabraId(id);
+        return new ResponseEntity<List<Definicion>>(list, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @PostMapping("/{id}/definiciones")
+    public ResponseEntity<Definicion> createDefinicion(@PathVariable Long id, @RequestBody Definicion definicion) throws RecordNotFoundException {
+        Definicion createdDefinicion = definicionService.createDefinicion(id, definicion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdDefinicion);
     }
 }
