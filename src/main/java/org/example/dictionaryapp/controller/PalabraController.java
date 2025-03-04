@@ -1,5 +1,6 @@
 package org.example.dictionaryapp.controller;
 
+import org.example.dictionaryapp.dto.PalabraDTO;
 import org.example.dictionaryapp.exception.RecordNotFoundException;
 import org.example.dictionaryapp.model.Definicion;
 import org.example.dictionaryapp.model.Palabra;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/palabras")
@@ -25,30 +27,48 @@ public class PalabraController {
 
     @CrossOrigin
     @GetMapping
-    public ResponseEntity<List<Palabra>> getAllPalabras() {
+    public ResponseEntity<List<PalabraDTO>> getAllPalabras() {
+        List<Palabra> list = palabraService.getAllPalabras();
+        List<PalabraDTO> terminos = list.stream()
+                .map(palabra -> new PalabraDTO(palabra.getId(), palabra.getTermino(), palabra.getCategoriaGramatical()))
+                .collect(Collectors.toList());
+        return new ResponseEntity<List<PalabraDTO>>(terminos, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @GetMapping("/condefiniciones")
+    public ResponseEntity<List<Palabra>> getAllPalabrasConDefiniciones() {
         List<Palabra> list = palabraService.getAllPalabras();
         return new ResponseEntity<List<Palabra>>(list, new HttpHeaders(), HttpStatus.OK);
     }
 
     @CrossOrigin
     @GetMapping("/{id}")
-    public ResponseEntity<Palabra> getPalabraById(@PathVariable Long id) throws RecordNotFoundException {
+    public ResponseEntity<PalabraDTO> getPalabraById(@PathVariable Long id) throws RecordNotFoundException {
+        Palabra palabra = palabraService.getPalabraById(id);
+        PalabraDTO termino = new PalabraDTO(palabra.getId(), palabra.getTermino(), palabra.getCategoriaGramatical());
+        return new ResponseEntity<PalabraDTO>(termino, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @GetMapping("/{id}/condefiniciones")
+    public ResponseEntity<Palabra> getPalabraByIdConDefiniciones(@PathVariable Long id) throws RecordNotFoundException {
         Palabra palabra = palabraService.getPalabraById(id);
         return new ResponseEntity<Palabra>(palabra, new HttpHeaders(), HttpStatus.OK);
     }
 
     @CrossOrigin
-    @PutMapping
+    @PostMapping
     public ResponseEntity<Palabra> createPalabra(@RequestBody Palabra palabra) {
         Palabra createdPalabra = palabraService.createPalabra(palabra);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPalabra);
     }
 
     @CrossOrigin
-    @PutMapping("/{id}") // Use an ID to identify the Palabra to update
+    @PutMapping("/{id}")
     public ResponseEntity<Palabra> updatePalabra(@PathVariable Long id, @RequestBody Palabra palabra) throws RecordNotFoundException {
         Palabra updatedPalabra = palabraService.updatePalabra(id, palabra);
-        return ResponseEntity.ok(updatedPalabra);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedPalabra);
     }
 
     @CrossOrigin
@@ -80,7 +100,7 @@ public class PalabraController {
     }
 
     @CrossOrigin
-    @PutMapping("/condefiniciones")
+    @PostMapping("/condefiniciones")
     public ResponseEntity<Palabra> createPalabraConDefiniciones(@RequestBody Palabra palabra) {
         Palabra createdPalabra = palabraService.createPalabraConDefiniciones(palabra);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPalabra);
@@ -99,4 +119,5 @@ public class PalabraController {
         Definicion createdDefinicion = definicionService.createDefinicion(id, definicion);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDefinicion);
     }
+
 }
