@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -118,6 +119,20 @@ public class PalabraController {
     public ResponseEntity<Definicion> createDefinicion(@PathVariable Long id, @RequestBody Definicion definicion) throws RecordNotFoundException {
         Definicion createdDefinicion = definicionService.createDefinicion(id, definicion);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDefinicion);
+    }
+
+    @CrossOrigin
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
+        Map<String, Object> estadisticas = palabraService.obtenerEstadisticas();
+        return new ResponseEntity<Map<String, Object>>(estadisticas, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @CrossOrigin
+    @GetMapping("/exportar")
+    public ResponseEntity<String> exportarDiccionario() {
+        String exportado = palabraService.exportarDiccionario();
+        return ResponseEntity.status(HttpStatus.OK).body(exportado);
     }
 
 }
