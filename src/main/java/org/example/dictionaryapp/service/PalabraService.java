@@ -61,40 +61,22 @@ public class PalabraService {
         }
     }
 
-    public List<Palabra> getPalabrasByCategoria(String categoria) {
-        try {
-            return palabraRepository.findByCategoriaGramatical(categoria);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener palabras por categoría: " + e.getMessage());
-        }
+
+
+    public List<Palabra> findByCategoriaGramatical(String categoria) {
+        return palabraRepository.findByCategoriaGramatical(categoria);
     }
 
-    public List<Palabra> getPalabrasByInicial(char inicial) {
-        try {
-            return palabraRepository.findByTerminoStartingWith(inicial);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener palabras por inicial: " + e.getMessage());
-        }
+    // Consulta por término que empieza con un caracter específico
+    public List<Palabra> findByTerminoStartingWith(char inicial) {
+        return palabraRepository.findByTerminoStartingWith(inicial);
     }
 
-    public boolean existePalabra(String termino) {
-        try {
-            return palabraRepository.existsByTermino(termino);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al verificar existencia de la palabra: " + e.getMessage());
-        }
+    // Consulta para verificar si una palabra con un término existe
+    public boolean existsByTermino(String termino) {
+        return palabraRepository.existsByTermino(termino);
     }
 
-    public Palabra createPalabraConDefiniciones(Palabra palabra) {
-        try {
-            for (Definicion definicion : palabra.getDefiniciones()) {
-                definicion.setPalabra(palabra);
-            }
-            return palabraRepository.save(palabra);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al crear palabra con definiciones: " + e.getMessage());
-        }
-    }
 
     public Map<String, Object> obtenerEstadisticas() {
         try {
