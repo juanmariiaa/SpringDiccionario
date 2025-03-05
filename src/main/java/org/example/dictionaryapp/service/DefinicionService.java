@@ -17,28 +17,6 @@ public class DefinicionService {
     @Autowired
     private DefinicionRepository definicionRepository;
 
-    @Autowired
-    private PalabraRepository palabraRepository;
-
-    public List<Definicion> getDefinicionesByPalabraId(Long palabraId) throws RecordNotFoundException {
-        Optional<Palabra> palabra = palabraRepository.findById(palabraId);
-        if (palabra.isPresent()) {
-            return palabra.get().getDefiniciones();
-        } else {
-            throw new RecordNotFoundException("No existe Palabra para el id: ", palabraId);
-        }
-    }
-
-    public Definicion createDefinicion(Long palabraId, Definicion definicion) throws RecordNotFoundException {
-        Optional<Palabra> palabra = palabraRepository.findById(palabraId);
-        if (palabra.isPresent()) {
-            definicion.setPalabra(palabra.get());
-            return definicionRepository.save(definicion);
-        } else {
-            throw new RecordNotFoundException("No existe Palabra para el id: ", palabraId);
-        }
-    }
-
     public void deleteDefinicion(Long id) throws RecordNotFoundException {
         Optional<Definicion> definicionOptional = definicionRepository.findById(id);
         if (definicionOptional.isPresent()) {

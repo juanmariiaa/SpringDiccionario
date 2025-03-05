@@ -4,9 +4,11 @@ import org.example.dictionaryapp.model.Palabra;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public interface PalabraRepository extends JpaRepository<Palabra, Long> {
 
     @Query("SELECT p FROM Palabra p WHERE p.categoriaGramatical = :categoria")
