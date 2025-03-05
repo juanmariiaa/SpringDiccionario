@@ -4,9 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.dictionaryapp.dto.PalabraDTO;
 import org.example.dictionaryapp.exception.RecordNotFoundException;
-import org.example.dictionaryapp.model.Definicion;
 import org.example.dictionaryapp.model.Palabra;
-import org.example.dictionaryapp.service.DefinicionService;
+import org.example.dictionaryapp.model.Definicion;
 import org.example.dictionaryapp.service.PalabraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -22,9 +21,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/palabras")
 @Tag(name = "Palabras", description = "API para gestionar palabras y definiciones en el diccionario.")
 public class PalabraController {
-
-    @Autowired
-    private DefinicionService definicionService;
 
     @Autowired
     private PalabraService palabraService;
@@ -43,7 +39,7 @@ public class PalabraController {
     @Operation(summary = "Listar todas las palabras con definiciones", description = "Obtiene todas las palabras junto con sus respectivas definiciones.")
     @CrossOrigin
     @GetMapping("/condefiniciones")
-    public ResponseEntity<List<Palabra>> getAllPalabrasConDefiniciones() {
+    public ResponseEntity<List<Palabra>> getAllDiccionario() {
         List<Palabra> list = palabraService.getAllPalabras();
         return new ResponseEntity<>(list, new HttpHeaders(), HttpStatus.OK);
     }
@@ -119,4 +115,49 @@ public class PalabraController {
         return new ResponseEntity<>(exists, new HttpHeaders(), HttpStatus.OK);
     }
 
+    @Operation(summary = "Exportar diccionario a CSV", description = "Exporta todas las palabras y sus definiciones a un formato CSV.")
+    @CrossOrigin
+    @GetMapping("/exportar")
+    public ResponseEntity<String> exportarDiccionario() {
+        String csvContent = palabraService.exportarDiccionario();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=diccionario.csv");
+        return new ResponseEntity<>(csvContent, headers, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Obtener estadísticas del diccionario", description = "Obtiene estadísticas sobre el total de palabras, definiciones y categorías gramaticales en el diccionario.")
+    @CrossOrigin
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
+        Map<String, Object> estadisticas = palabraService.obtenerEstadisticas();
+        return new ResponseEntity<>(estadisticas, new HttpHeaders(), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Registrar una nueva palabra con definiciones", description = "Agrega una nueva palabra al diccionario junto con sus definiciones.")
+    @CrossOrigin
+    @PostMapping("/condefiniciones")
+    public ResponseEntity<Palabra> createPalabraConDefiniciones(@RequestBody Map<String, Object> request) {
+        Palabra palabra = new Palabra();
+        palabra.setTermino((String) request.get("termino"));
+        palabra.setCategoriaGramatical((String) request.get("categoriaGramatical"));
+
+        List<Map<String, String>> definicionesData = (List<Map<String, String>>) request.get("definiciones");
+        List<Definicion> definiciones = definicionesData.stream()
+                .map(data -> {
+                    Definicion definicion = new Definicion();
+                    definicion.setDescripcion(data.get("descripcion"));
+                    return definicion;
+                })
+                .collect(Collectors.toList());
+
+        Palabra createdPalabra = palabraService.createPalabraConDefiniciones(palabra, definiciones);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPalabra);
+    }
+    @Operation(summary = "Agregar una nueva definición a una palabra", description = "Agrega una nueva definición a una palabra existente en el diccionario mediante su ID.")
+    @CrossOrigin
+    @PostMapping("/{id}/definiciones")
+    public ResponseEntity<Palabra> addDefinicionToPalabra(@PathVariable Long id, @RequestBody Definicion definicion) throws RecordNotFoundException {
+        Palabra updatedPalabra = palabraService.addDefinicionToPalabra(id, definicion);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedPalabra);
+    }
 }
