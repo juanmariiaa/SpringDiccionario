@@ -202,4 +202,12 @@ public class PalabraService {
             throw new RecordNotFoundException("No existe Palabra para el id: ", id);
         }
     }
+    public List<Definicion> getDefinicionesByPalabraId(Long id) throws RecordNotFoundException {
+        Optional<Palabra> palabraOptional = palabraRepository.findById(id);
+        if (palabraOptional.isPresent()) {
+            return palabraOptional.get().getDefiniciones();
+        } else {
+            throw new RecordNotFoundException("No existe Palabra para el id: ", id);
+        }
+    }
 }
